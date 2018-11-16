@@ -1,4 +1,5 @@
 from iconservice import *
+import os
 
 TAG = 'LayerXToken'
 SYMBOL = 'LXT'
@@ -67,11 +68,16 @@ class LayerXToken(IconScoreBase):
     def on_update(self) -> None:
         """constructor called during `update` deployment"""
         super().on_update()
-    
+
     @external(readonly=True)
     def hello(self) -> str:
         Logger.debug(f'Hello, world!', TAG)
         return "Hello"
+
+    @external(readonly=True)
+    def balanceOf(self) -> int:
+        self._total_supply.set(100)
+        return 1
 
     @external(readonly=True)
     def name(self) -> str:
@@ -84,3 +90,6 @@ class LayerXToken(IconScoreBase):
     @external(readonly=True)
     def decimals(self) -> int:
         return 10
+
+    def fallback(self):
+        pass

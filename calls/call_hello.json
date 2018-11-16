@@ -2,7 +2,7 @@
   "jsonrpc": "2.0",
   "method": "icx_call",
   "params": {
-    "to": "cx9a62aab0e91e73f28a7e42d525fe96bb0a083b11",
+    "to": "cx772509379b810d7b5c6ab4bd59d9fea33d3662b0",
     "dataType": "call",
     "data": {
       "method": "hello"

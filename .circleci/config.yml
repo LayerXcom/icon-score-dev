@@ -2,9 +2,11 @@ version: 2
 
 jobs:
   build:
-    working_directory: /go/src/github.com/LayerXcom/icon-score-dev
+    working_directory: /src/github.com/LayerXcom/icon-score-dev
     docker:
     - image: mathetake/t-bears-docker:latest
     steps:
       - checkout
       - run: tbears test layerx
+      - run: tbears test lxtSale
+

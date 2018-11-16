@@ -1,6 +1,6 @@
 import os
 
-from iconsdk.builder.transaction_builder import DeployTransactionBuilder
+from iconsdk.builder.transaction_builder import DeployTransactionBuilder, CallTransactionBuilder
 from iconsdk.builder.call_builder import CallBuilder
 from iconsdk.icon_service import IconService
 from iconsdk.libs.in_memory_zip import gen_deploy_data_content
@@ -61,6 +61,19 @@ class TestLayerXToken(IconIntegrateTestBase):
             .to(self._score_address) \
             .method("hello") \
             .build()
+
+        transaction = CallTransactionBuilder() \
+            .from_(self._test1.get_address()) \
+            .to(self._score_address) \
+            .step_limit(100000000000) \
+            .nid(3) \
+            .nonce(100) \
+            .method("balanceOf") \
+            .build()
+
+        signed_transaction = SignedTransaction(transaction, self._test1)
+        tx_result = self.process_transaction(signed_transaction, self.icon_service)
+        print(tx_result)
 
         # Sends the call request
         response = self.process_call(call, self.icon_service)
