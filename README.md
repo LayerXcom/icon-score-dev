@@ -1,6 +1,8 @@
 # icon-score-dev
 [![CircleCI](https://circleci.com/gh/LayerXcom/icon-score-dev.svg?style=shield)](https://circleci.com/gh/LayerXcom/icon-score-dev)
 
+an example of icon-score smart contract development
+
 ## setting up
 
 prepare python environment by `pyenv` and `virtualenv`
@@ -95,3 +97,10 @@ response : {
     "id": 1
 }
 ```
+
+
+## References
+
+- ICON sdk references: https://github.com/icon-project/icon-sdk-python
+- Reference implementation of IRC2: https://github.com/sink772/IRC2-token-standard
+- IRC2 token standard: https://github.com/icon-project/IIPs/blob/master/IIPS/iip-2.md

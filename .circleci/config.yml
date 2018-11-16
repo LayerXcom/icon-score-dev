@@ -4,6 +4,7 @@ jobs:
   build:
     working_directory: /go/src/github.com/LayerXcom/icon-score-dev
     docker:
-    - image: python:3.6.5
+    - image: mathetake/t-bears-docker:latest
     steps:
-    - checkout
+      - checkout
+      - run: tbears test layerx

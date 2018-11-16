@@ -58,19 +58,11 @@ class LayerXToken(IconScoreBase):
         # initialize storage
         self._total_supply = VarDB(self._TOTAL_SUPPLY, db, value_type=int)
         self._balances = DictDB(self._BALANCES, db, value_type=int)
-        self._owner = VarDB(self._OWNER, db, value_type=Address)
 
     def on_install(self, totalSupply: int) -> None:
         """constructor called during first deployment"""
         super().on_install()
-
         self._total_supply.set(totalSupply)
-        self._owner.set(self.msg.sender)
-
-    @external(readonly=True)
-    def _get_owner(self) -> str:
-        a: Address = self._owner.get()
-        return str(a.to_bytes())
 
     def on_update(self) -> None:
         """constructor called during `update` deployment"""
