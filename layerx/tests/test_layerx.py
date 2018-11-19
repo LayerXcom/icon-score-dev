@@ -1,6 +1,7 @@
 import os
+from time import sleep
 
-from iconsdk.builder.transaction_builder import DeployTransactionBuilder
+from iconsdk.builder.transaction_builder import DeployTransactionBuilder, CallTransactionBuilder
 from iconsdk.builder.call_builder import CallBuilder
 from iconsdk.icon_service import IconService
 from iconsdk.libs.in_memory_zip import gen_deploy_data_content
@@ -24,7 +25,7 @@ class TestLayerXToken(IconIntegrateTestBase):
         # self.icon_service = IconService(HTTPProvider(self.TEST_HTTP_ENDPOINT_URI_V3))
 
         # install SCORE
-        params = {'totalSupply': 1000}
+        params = {'initialSupply': 1000, 'decimals': 10}
         self._score_address = self._deploy_score(params=params)['scoreAddress']
 
     def _deploy_score(self, to: str = SCORE_INSTALL_ADDRESS, params: dict = None) -> dict:
@@ -56,13 +57,77 @@ class TestLayerXToken(IconIntegrateTestBase):
 
         self.assertEqual(self._score_address, tx_result['scoreAddress'])
 
-    def test_call_hello(self):
+    def test_call_name(self):
         call = CallBuilder().from_(self._test1.get_address()) \
             .to(self._score_address) \
-            .method("hello") \
+            .method("name") \
             .build()
 
         # Sends the call request
         response = self.process_call(call, self.icon_service)
 
-        self.assertEqual("Hello", response)
+        self.assertEqual("LayerXToken", response)
+
+    def test_call_symbol(self):
+        call = CallBuilder().from_(self._test1.get_address()) \
+            .to(self._score_address) \
+            .method("symbol") \
+            .build()
+
+        # Sends the call request
+        response = self.process_call(call, self.icon_service)
+
+        self.assertEqual("LXT", response)
+
+    def test_call_balanceOf(self):
+        call = CallBuilder().from_(self._test1.get_address()) \
+            .to(self._score_address) \
+            .method("balanceOf") \
+            .params({"_owner": self._test1.get_address()}) \
+            .build()
+
+        # Sends the call request
+        response = self.process_call(call, self.icon_service)
+
+        self.assertEqual(hex(1000*10**10), response)
+
+    def test_call_transfer(self):
+        value = 100
+        recipient = f"hx{'0'*40}"
+
+        # publish transfer calling transactions
+        transaction = CallTransactionBuilder()\
+            .from_(self._test1.get_address())\
+            .to(self._score_address).method({}) \
+            .step_limit(2000000)\
+            .method("transfer")\
+            .params({"_to": recipient, "_value": value}) \
+            .build()
+
+        signed_transaction = SignedTransaction(transaction, self._test1)
+        tx_result = self.process_transaction(signed_transaction)
+
+        print(tx_result)
+
+        self.assertEqual(tx_result['status'], 1)
+        self.assertFalse(tx_result['eventLogs'] is None)
+
+        # check the balances of recipient
+        call = CallBuilder().from_(self._test1.get_address()) \
+            .to(self._score_address) \
+            .method("balanceOf") \
+            .params({"_owner": recipient}) \
+            .build()
+
+        response = self.process_call(call, self.icon_service)
+        self.assertEqual(hex(value), response)
+
+        # check the balances of owner
+        call = CallBuilder().from_(self._test1.get_address()) \
+            .to(self._score_address) \
+            .method("balanceOf") \
+            .params({"_owner": self._test1.get_address()}) \
+            .build()
+
+        response = self.process_call(call, self.icon_service)
+        self.assertEqual(hex(1000*10**10 - value), response)

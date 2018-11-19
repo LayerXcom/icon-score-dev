@@ -88,7 +88,6 @@ Transaction result: {
 
 ## call methods
 
-
 ```
 ❯ tbears call calls/call_hello.json
 response : {
@@ -98,9 +97,9 @@ response : {
 }
 ```
 
-
 ## References
 
 - ICON sdk references: https://github.com/icon-project/icon-sdk-python
-- Reference implementation of IRC2: https://github.com/sink772/IRC2-token-standard
 - IRC2 token standard: https://github.com/icon-project/IIPs/blob/master/IIPS/iip-2.md
+- Reference implementation of IRC2: https://github.com/sink772/IRC2-token-standard
+- ICON Smart Contract - SCORE: https://icon-project.github.io/score-guide/
