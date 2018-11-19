@@ -82,11 +82,15 @@ class LXTCrowdSale(IconScoreBase):
     def totalJoinerCount(self) -> int:
         return len(self._joiner_list)
 
+    @external(readonly=True)
+    def amountRaised(self) -> int:
+        return self._amount_raised.get()
+
     def _after_deadline(self) -> bool:
         return self.block_height >= self._dead_line.get()
 
     @external(readonly=True)
-    def is_crowdsale_closed(self) -> bool:
+    def isCrowdsaleClosed(self) -> bool:
         return self._crowdsale_closed.get()
 
     @external
@@ -107,4 +111,18 @@ class LXTCrowdSale(IconScoreBase):
 
         self._crowdsale_closed.set(False)
 
+    @payable
+    def fallback(self):
+        if self._crowdsale_closed.get():
+            revert("crowdsale is already closed")
 
+        self._balances[self.msg.sender] += self.msg.value
+        self._amount_raised.set(self._amount_raised.get() + self.msg.value)
+
+        token_score = self.create_interface_score(self._address_token_score.get(), TokenInterface)
+        token_score.transfer(self.msg.sender, int(self.msg.value / self._price.get()), b'')
+
+        if self.msg.sender not in self._joiner_list:
+            self._joiner_list.put(self.msg.sender)
+
+        self.FundTransfer(self.msg.sender, self.msg.value, True)

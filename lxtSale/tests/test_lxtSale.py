@@ -1,7 +1,7 @@
 import os
 
 from iconsdk.builder.call_builder import CallBuilder
-from iconsdk.builder.transaction_builder import DeployTransactionBuilder, CallTransactionBuilder
+from iconsdk.builder.transaction_builder import DeployTransactionBuilder, CallTransactionBuilder, TransactionBuilder
 from iconsdk.libs.in_memory_zip import gen_deploy_data_content
 from iconsdk.signed_transaction import SignedTransaction
 from tbears.libs.icon_integrate_test import IconIntegrateTestBase, SCORE_INSTALL_ADDRESS
@@ -120,10 +120,21 @@ class TestLXTCrowdSale(IconIntegrateTestBase):
         response = self.process_call(call, self.icon_service)
         self.assertEqual(hex(0), response)
 
+    def test_amount_raised(self):
+        # Generates a call instance using the CallBuilder
+        call = CallBuilder().from_(self._test1.get_address()) \
+            .to(self.crowdsale_score_address) \
+            .method("amountRaised") \
+            .build()
+
+        # Sends the call request
+        response = self.process_call(call, self.icon_service)
+        self.assertEqual(hex(0), response)
+
     def test_token_fallback(self):
         call = CallBuilder().from_(self._test1.get_address()) \
             .to(self.crowdsale_score_address) \
-            .method("is_crowdsale_closed") \
+            .method("isCrowdsaleClosed") \
             .build()
 
         response = self.process_call(call, self.icon_service)
@@ -143,9 +154,58 @@ class TestLXTCrowdSale(IconIntegrateTestBase):
         # Generates a call instance using the CallBuilder
         call = CallBuilder().from_(self._test1.get_address()) \
             .to(self.crowdsale_score_address) \
-            .method("is_crowdsale_closed") \
+            .method("isCrowdsaleClosed") \
             .build()
 
         # Sends the call request
         response = self.process_call(call, self.icon_service)
         self.assertEqual(hex(False), response)
+
+    def test_fallback(self):
+        donation = 10
+
+        transaction = CallTransactionBuilder() \
+            .from_(self._test1.get_address()) \
+            .to(self.token_score_address).method({}) \
+            .step_limit(2000000) \
+            .method("transfer") \
+            .params({"_to": self.crowdsale_score_address, "_value": 1000}) \
+            .build()
+
+        signed_transaction = SignedTransaction(transaction, self._test1)
+        tx_result = self.process_transaction(signed_transaction)
+        self.assertTrue('status' in tx_result)
+        self.assertEqual(1, tx_result['status'])
+
+        transaction = TransactionBuilder()\
+            .from_(self._test1.get_address())\
+            .to(self.crowdsale_score_address)\
+            .step_limit(2000000)\
+            .value(donation)\
+            .build()
+
+        signed_transaction = SignedTransaction(transaction, self._test1)
+        tx_result = self.process_transaction(signed_transaction)
+        self.assertTrue('status' in tx_result)
+        self.assertEqual(1, tx_result['status'])
+
+        call = CallBuilder().from_(self._test1.get_address()) \
+            .to(self.crowdsale_score_address) \
+            .method("isCrowdsaleClosed") \
+            .build()
+        response = self.process_call(call, self.icon_service)
+        self.assertEqual(hex(False), response)
+
+        call = CallBuilder().from_(self._test1.get_address()) \
+            .to(self.crowdsale_score_address) \
+            .method("totalJoinerCount") \
+            .build()
+        response = self.process_call(call, self.icon_service)
+        self.assertEqual(hex(1), response)
+
+        call = CallBuilder().from_(self._test1.get_address()) \
+            .to(self.crowdsale_score_address) \
+            .method("amountRaised") \
+            .build()
+        response = self.process_call(call, self.icon_service)
+        self.assertEqual(hex(donation), response)
