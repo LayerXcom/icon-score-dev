@@ -15,17 +15,13 @@ class TestLayerXToken(IconIntegrateTestBase):
 
     def setUp(self):
         super().setUp()
-
         self.icon_service = None
-        # if you want to send request to network, uncomment next line and set self.TEST_HTTP_ENDPOINT_URI_V3
-        # self.icon_service = IconService(HTTPProvider(self.TEST_HTTP_ENDPOINT_URI_V3))
 
-        # install SCORE
-        params = {'initialSupply': 1000, 'decimals': 10}
+        # deploy
+        params = {'initialSupply': 1000, '_decimals': 10}
         self._score_address = self._deploy_score(params=params)['scoreAddress']
 
     def _deploy_score(self, to: str = SCORE_INSTALL_ADDRESS, params: dict = None) -> dict:
-        # Generates an instance of transaction for deploying SCORE.
         transaction = DeployTransactionBuilder() \
             .from_(self._test1.get_address()) \
             .to(to) \
@@ -36,10 +32,7 @@ class TestLayerXToken(IconIntegrateTestBase):
             .content(gen_deploy_data_content(self.SCORE_PROJECT)) \
             .build()
 
-        # Returns the signed transaction object having a signature
         signed_transaction = SignedTransaction(transaction, self._test1)
-
-        # process the transaction in local
         tx_result = self.process_transaction(signed_transaction, self.icon_service)
 
         self.assertTrue('status' in tx_result)

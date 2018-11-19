@@ -65,7 +65,7 @@ class LXTCrowdSale(IconScoreBase):
         self._dead_line.set(self.block_height + _durationInBlock)
         self._price.set(_tokenToICXRatio)
         self._funding_goal_reached.set(False)
-        self._crowdsale_closed.set(False)
+        self._crowdsale_closed.set(True)
 
     def on_update(self) -> None:
         super().on_update()
@@ -75,6 +75,36 @@ class LXTCrowdSale(IconScoreBase):
         return TAG
 
     @external(readonly=True)
-    def getTokenAddress(self) -> bytes:
-        return self._address_token_score.get().to_bytes()
+    def getTokenAddress(self) -> str:
+        return self._address_token_score.get()
+
+    @external(readonly=True)
+    def totalJoinerCount(self) -> int:
+        return len(self._joiner_list)
+
+    def _after_deadline(self) -> bool:
+        return self.block_height >= self._dead_line.get()
+
+    @external(readonly=True)
+    def is_crowdsale_closed(self) -> bool:
+        return self._crowdsale_closed.get()
+
+    @external
+    def tokenFallback(self, _from: Address, _value: int, _data: bytes = None):
+        """
+        implement `tokenFallBack` interface in order for this contract
+         to receive tokens for distributing them in response to donations (as in fallback function)
+        """
+
+        if self.msg.sender != self._address_token_score.get():
+            revert("Unknown token address")
+
+        if _from != self.owner:
+            revert("Invalid sender")
+
+        if _value <= 0:
+            revert(f"given `_value` invalid: {_value} <= 0")
+
+        self._crowdsale_closed.set(False)
+
 

@@ -1,7 +1,7 @@
 import os
 
 from iconsdk.builder.call_builder import CallBuilder
-from iconsdk.builder.transaction_builder import DeployTransactionBuilder
+from iconsdk.builder.transaction_builder import DeployTransactionBuilder, CallTransactionBuilder
 from iconsdk.libs.in_memory_zip import gen_deploy_data_content
 from iconsdk.signed_transaction import SignedTransaction
 from tbears.libs.icon_integrate_test import IconIntegrateTestBase, SCORE_INSTALL_ADDRESS
@@ -9,13 +9,12 @@ from tbears.libs.icon_integrate_test import IconIntegrateTestBase, SCORE_INSTALL
 DIR_PATH = os.path.abspath(os.path.dirname(__file__))
 
 
-# (self, _fundingGoalInICX: int, _tokenScore: Address, _durationInBlock: int, _tokenToICXRatio: int
 class TestLXTCrowdSale(IconIntegrateTestBase):
     TEST_HTTP_ENDPOINT_URI_V3 = "http://127.0.0.1:9000/api/v3"
     TOKEN_SCORE_PROJECT = os.path.abspath(os.path.join(DIR_PATH, '../../layerx'))
     TOKEN_SCORE_PARAM = {
         "initialSupply": 10000,
-        "decimals": 1000
+        "_decimals": 1000
     }
 
     CROWDSALE_SCORE_PROJECT = os.path.abspath(os.path.join(DIR_PATH, '..'))
@@ -28,12 +27,9 @@ class TestLXTCrowdSale(IconIntegrateTestBase):
 
     def setUp(self):
         super().setUp()
-
         self.icon_service = None
-        # if you want to send request to network, uncomment next line and set self.TEST_HTTP_ENDPOINT_URI_V3
-        # self.icon_service = IconService(HTTPProvider(self.TEST_HTTP_ENDPOINT_URI_V3))
 
-        # install SCORE
+        # deploy
         _deploy_result = self._deploy_score()
         self.crowdsale_score_address = _deploy_result['crowdsale_score_address']
         self.token_score_address = _deploy_result['token_score_address']
@@ -101,3 +97,55 @@ class TestLXTCrowdSale(IconIntegrateTestBase):
         # Sends the call request
         response = self.process_call(call, self.icon_service)
         self.assertEqual("LayerXToken", response)
+
+    def test_get_token_address(self):
+        # Generates a call instance using the CallBuilder
+        call = CallBuilder().from_(self._test1.get_address()) \
+            .to(self.crowdsale_score_address) \
+            .method("getTokenAddress") \
+            .build()
+
+        # Sends the call request
+        response = self.process_call(call, self.icon_service)
+        self.assertEqual(self.token_score_address, response)
+
+    def test_total_joiner_count(self):
+        # Generates a call instance using the CallBuilder
+        call = CallBuilder().from_(self._test1.get_address()) \
+            .to(self.crowdsale_score_address) \
+            .method("totalJoinerCount") \
+            .build()
+
+        # Sends the call request
+        response = self.process_call(call, self.icon_service)
+        self.assertEqual(hex(0), response)
+
+    def test_token_fallback(self):
+        call = CallBuilder().from_(self._test1.get_address()) \
+            .to(self.crowdsale_score_address) \
+            .method("is_crowdsale_closed") \
+            .build()
+
+        response = self.process_call(call, self.icon_service)
+        self.assertEqual(hex(True), response)
+
+        transaction = CallTransactionBuilder() \
+            .from_(self._test1.get_address()) \
+            .to(self.token_score_address).method({}) \
+            .step_limit(2000000) \
+            .method("transfer") \
+            .params({"_to": self.crowdsale_score_address, "_value": 100}) \
+            .build()
+
+        signed_transaction = SignedTransaction(transaction, self._test1)
+        _ = self.process_transaction(signed_transaction)
+
+        # Generates a call instance using the CallBuilder
+        call = CallBuilder().from_(self._test1.get_address()) \
+            .to(self.crowdsale_score_address) \
+            .method("is_crowdsale_closed") \
+            .build()
+
+        # Sends the call request
+        response = self.process_call(call, self.icon_service)
+        self.assertEqual(hex(False), response)
