@@ -1,13 +1,9 @@
 import os
-from time import sleep
 
-from iconsdk.builder.transaction_builder import DeployTransactionBuilder, CallTransactionBuilder
 from iconsdk.builder.call_builder import CallBuilder
-from iconsdk.icon_service import IconService
+from iconsdk.builder.transaction_builder import DeployTransactionBuilder, CallTransactionBuilder
 from iconsdk.libs.in_memory_zip import gen_deploy_data_content
-from iconsdk.providers.http_provider import HTTPProvider
 from iconsdk.signed_transaction import SignedTransaction
-
 from tbears.libs.icon_integrate_test import IconIntegrateTestBase, SCORE_INSTALL_ADDRESS
 
 DIR_PATH = os.path.abspath(os.path.dirname(__file__))
@@ -89,18 +85,18 @@ class TestLayerXToken(IconIntegrateTestBase):
         # Sends the call request
         response = self.process_call(call, self.icon_service)
 
-        self.assertEqual(hex(1000*10**10), response)
+        self.assertEqual(hex(1000 * 10 ** 10), response)
 
     def test_call_transfer_success(self):
         value = 100
         recipient = f"hx{'0'*40}"
 
         # publish transfer calling transactions
-        transaction = CallTransactionBuilder()\
-            .from_(self._test1.get_address())\
+        transaction = CallTransactionBuilder() \
+            .from_(self._test1.get_address()) \
             .to(self._score_address).method({}) \
-            .step_limit(2000000)\
-            .method("transfer")\
+            .step_limit(2000000) \
+            .method("transfer") \
             .params({"_to": recipient, "_value": value}) \
             .build()
 
@@ -108,7 +104,7 @@ class TestLayerXToken(IconIntegrateTestBase):
         tx_result = self.process_transaction(signed_transaction)
 
         self.assertEqual(tx_result['status'], 1)
-        self.assertFalse(tx_result['eventLogs'] is None)
+        self.assertNotEqual(len(tx_result['eventLogs']), 0)
         print(f"eventLogs: {tx_result['eventLogs']}")
 
         # check the balances of recipient
@@ -129,18 +125,18 @@ class TestLayerXToken(IconIntegrateTestBase):
             .build()
 
         response = self.process_call(call, self.icon_service)
-        self.assertEqual(hex(1000*10**10 - value), response)
+        self.assertEqual(hex(1000 * 10 ** 10 - value), response)
 
     def test_call_transfer_fail(self):
-        value = 1000*10**10 + 1
+        value = 1000 * 10 ** 10 + 1
         recipient = f"hx{'0'*40}"
 
         # publish transfer calling transactions
-        transaction = CallTransactionBuilder()\
-            .from_(self._test1.get_address())\
+        transaction = CallTransactionBuilder() \
+            .from_(self._test1.get_address()) \
             .to(self._score_address).method({}) \
-            .step_limit(2000000)\
-            .method("transfer")\
+            .step_limit(2000000) \
+            .method("transfer") \
             .params({"_to": recipient, "_value": value}) \
             .build()
 
@@ -168,4 +164,4 @@ class TestLayerXToken(IconIntegrateTestBase):
             .build()
 
         response = self.process_call(call, self.icon_service)
-        self.assertEqual(hex(1000*10**10), response)
+        self.assertEqual(hex(1000 * 10 ** 10), response)
