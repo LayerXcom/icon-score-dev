@@ -114,7 +114,7 @@ class LayerXToken(IconScoreBase, TokenStandard):
     def _transfer(self, _from: Address, _to: Address, _value: int, _data: bytes):
 
         if self._balances[_from] < _value:
-            revert("balance is insufficient.")
+            revert("balance is insufficient")
 
         self._balances[_from] -= _value
         self._balances[_to] += _value

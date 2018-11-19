@@ -91,7 +91,7 @@ class TestLayerXToken(IconIntegrateTestBase):
 
         self.assertEqual(hex(1000*10**10), response)
 
-    def test_call_transfer(self):
+    def test_call_transfer_success(self):
         value = 100
         recipient = f"hx{'0'*40}"
 
@@ -107,10 +107,9 @@ class TestLayerXToken(IconIntegrateTestBase):
         signed_transaction = SignedTransaction(transaction, self._test1)
         tx_result = self.process_transaction(signed_transaction)
 
-        print(tx_result)
-
         self.assertEqual(tx_result['status'], 1)
         self.assertFalse(tx_result['eventLogs'] is None)
+        print(f"eventLogs: {tx_result['eventLogs']}")
 
         # check the balances of recipient
         call = CallBuilder().from_(self._test1.get_address()) \
@@ -131,3 +130,42 @@ class TestLayerXToken(IconIntegrateTestBase):
 
         response = self.process_call(call, self.icon_service)
         self.assertEqual(hex(1000*10**10 - value), response)
+
+    def test_call_transfer_fail(self):
+        value = 1000*10**10 + 1
+        recipient = f"hx{'0'*40}"
+
+        # publish transfer calling transactions
+        transaction = CallTransactionBuilder()\
+            .from_(self._test1.get_address())\
+            .to(self._score_address).method({}) \
+            .step_limit(2000000)\
+            .method("transfer")\
+            .params({"_to": recipient, "_value": value}) \
+            .build()
+
+        signed_transaction = SignedTransaction(transaction, self._test1)
+        tx_result = self.process_transaction(signed_transaction)
+
+        self.assertNotEqual(tx_result['status'], 1)
+        self.assertEqual(tx_result['failure']['message'], "balance is insufficient")
+
+        # check the balances of recipient
+        call = CallBuilder().from_(self._test1.get_address()) \
+            .to(self._score_address) \
+            .method("balanceOf") \
+            .params({"_owner": recipient}) \
+            .build()
+
+        response = self.process_call(call, self.icon_service)
+        self.assertEqual(hex(0), response)
+
+        # check the balances of owner
+        call = CallBuilder().from_(self._test1.get_address()) \
+            .to(self._score_address) \
+            .method("balanceOf") \
+            .params({"_owner": self._test1.get_address()}) \
+            .build()
+
+        response = self.process_call(call, self.icon_service)
+        self.assertEqual(hex(1000*10**10), response)
