@@ -93,6 +93,10 @@ class LXTCrowdSale(IconScoreBase):
     def isCrowdsaleClosed(self) -> bool:
         return self._crowdsale_closed.get()
 
+    @external(readonly=True)
+    def isFundingGoalReached(self) -> bool:
+        return self._amount_raised.get() >= self._funding_goal.get()
+
     @external
     def tokenFallback(self, _from: Address, _value: int, _data: bytes = None):
         """
@@ -126,3 +130,14 @@ class LXTCrowdSale(IconScoreBase):
             self._joiner_list.put(self.msg.sender)
 
         self.FundTransfer(self.msg.sender, self.msg.value, True)
+
+    @external
+    def checkGoalReached(self):
+        if self._after_deadline():
+            self._crowdsale_closed.set(True)
+
+            if self._amount_raised.get() >= self._funding_goal.get():
+                self._funding_goal_reached.set(True)
+                self.GoalReached(self._address_beneficiary.get(), self._amount_raised.get())
+
+            self._crowdsale_closed.set(True)

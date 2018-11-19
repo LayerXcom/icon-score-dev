@@ -19,9 +19,9 @@ class TestLXTCrowdSale(IconIntegrateTestBase):
 
     CROWDSALE_SCORE_PROJECT = os.path.abspath(os.path.join(DIR_PATH, '..'))
     CROWDSALE_PARAM = {
-        "_fundingGoalInICX": 1000000,
+        "_fundingGoalInICX": 5,
         "_tokenScore": None,
-        "_durationInBlock": 100,
+        "_durationInBlock": 1,
         "_tokenToICXRatio": 10
     }
 
@@ -207,5 +207,61 @@ class TestLXTCrowdSale(IconIntegrateTestBase):
             .to(self.crowdsale_score_address) \
             .method("amountRaised") \
             .build()
+
         response = self.process_call(call, self.icon_service)
         self.assertEqual(hex(donation), response)
+
+    def test_check_goal_reached(self):
+        donation = 10
+        transaction = CallTransactionBuilder() \
+            .from_(self._test1.get_address()) \
+            .to(self.token_score_address).method({}) \
+            .step_limit(2000000) \
+            .method("transfer") \
+            .params({"_to": self.crowdsale_score_address, "_value": 1000}) \
+            .build()
+
+        signed_transaction = SignedTransaction(transaction, self._test1)
+        tx_result = self.process_transaction(signed_transaction)
+        self.assertTrue('status' in tx_result)
+        self.assertEqual(1, tx_result['status'])
+
+        transaction = TransactionBuilder()\
+            .from_(self._test1.get_address())\
+            .to(self.crowdsale_score_address)\
+            .step_limit(2000000)\
+            .value(donation)\
+            .build()
+
+        signed_transaction = SignedTransaction(transaction, self._test1)
+        tx_result = self.process_transaction(signed_transaction)
+        self.assertTrue('status' in tx_result)
+        self.assertEqual(1, tx_result['status'])
+
+        transaction = CallTransactionBuilder() \
+            .from_(self._test1.get_address()) \
+            .to(self.crowdsale_score_address).method({}) \
+            .step_limit(2000000) \
+            .method("checkGoalReached") \
+            .build()
+
+        signed_transaction = SignedTransaction(transaction, self._test1)
+        tx_result = self.process_transaction(signed_transaction)
+        self.assertTrue('status' in tx_result)
+        self.assertEqual(1, tx_result['status'])
+
+        call = CallBuilder().from_(self._test1.get_address()) \
+            .to(self.crowdsale_score_address) \
+            .method("isCrowdsaleClosed") \
+            .build()
+
+        response = self.process_call(call, self.icon_service)
+        self.assertEqual(hex(True), response)
+
+        call = CallBuilder().from_(self._test1.get_address()) \
+            .to(self.crowdsale_score_address) \
+            .method("isFundingGoalReached") \
+            .build()
+
+        response = self.process_call(call, self.icon_service)
+        self.assertEqual(hex(True), response)
