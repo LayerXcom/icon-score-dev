@@ -97,6 +97,10 @@ class LXTCrowdSale(IconScoreBase):
     def isFundingGoalReached(self) -> bool:
         return self._amount_raised.get() >= self._funding_goal.get()
 
+    @external(readonly=True)
+    def getBalance(self) -> int:
+        return self._balances[self.msg.sender]
+
     @external
     def tokenFallback(self, _from: Address, _value: int, _data: bytes = None):
         """
@@ -120,6 +124,9 @@ class LXTCrowdSale(IconScoreBase):
         if self._crowdsale_closed.get():
             revert("crowdsale is already closed")
 
+        if self.msg.value <= 0:
+            revert("please provide value with >= 0")
+
         self._balances[self.msg.sender] += self.msg.value
         self._amount_raised.set(self._amount_raised.get() + self.msg.value)
 
@@ -141,3 +148,31 @@ class LXTCrowdSale(IconScoreBase):
                 self.GoalReached(self._address_beneficiary.get(), self._amount_raised.get())
 
             self._crowdsale_closed.set(True)
+
+    @external
+    def safeWithdraw(self):
+        if self._after_deadline():
+
+            # send all of raised ICX to beneficiary
+            if self._funding_goal_reached.get() and self.msg.sender == self._address_beneficiary.get():
+                _transfer_result = self.icx.send(self._address_beneficiary.get(), self._amount_raised.get())
+
+                if _transfer_result:
+                    self.FundTransfer(self._address_beneficiary.get(), self._amount_raised.get(), False)
+
+                else:
+                    # if the transfer fails, change the value of _funding_goal_reached
+                    # so that the contributors can withdraw their balances
+                    self._funding_goal_reached.set(False)
+
+            if not self._funding_goal_reached.get():
+                balance = self._balances[self.msg.sender]
+                self._balances[self.msg.sender] = 0
+
+                _transfer_result = self.icx.send(self.msg.sender, balance)
+
+                if _transfer_result:
+                    self.FundTransfer(self.msg.sender, balance, False)
+
+                else:
+                    self._balances[self.msg.sender] += balance
