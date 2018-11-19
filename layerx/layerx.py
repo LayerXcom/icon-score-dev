@@ -1,5 +1,4 @@
 from iconservice import *
-import os
 
 TAG = 'LayerXToken'
 SYMBOL = 'LXT'
@@ -11,6 +10,7 @@ class TokenStandard(ABC):
     Ref)1. https://github.com/sink772/IRC2-token-standard
         2. https://github.com/icon-project/IIPs/blob/master/IIPS/iip-2.md
     """
+
     @abstractmethod
     def name(self) -> str:
         pass
@@ -32,7 +32,7 @@ class TokenStandard(ABC):
         pass
 
     @abstractmethod
-    def transfer(self, _to: Address, _value: int, _data: bytes=None):
+    def transfer(self, _to: Address, _value: int, _data: bytes = None):
         pass
 
 
@@ -41,6 +41,7 @@ class TokenFallbackInterface(InterfaceScore):
     tokenFallBack interface as described in ERC223
     Ref) https://github.com/ethereum/EIPs/issues/223
     """
+
     @interface
     def tokenFallback(self, _from: Address, _value: int, _data: bytes):
         pass
@@ -48,7 +49,6 @@ class TokenFallbackInterface(InterfaceScore):
 
 # class LayerXToken(IconScoreBase, TokenStandard, TokenFallbackInterface):
 class LayerXToken(IconScoreBase, TokenStandard):
-
     # `key` of the storage
     _BALANCES = 'balances'
     _TOTAL_SUPPLY = 'total_supply'
@@ -62,19 +62,19 @@ class LayerXToken(IconScoreBase, TokenStandard):
         self._balances = DictDB(self._BALANCES, db, value_type=int)
         self._decimals = VarDB(self._DECIMALS, db, value_type=int)
 
-    def on_install(self, initialSupply: int, decimals: int) -> None:
+    def on_install(self, initialSupply: int, _decimals: int) -> None:
         """constructor called during first deployment"""
         super().on_install()
 
         if initialSupply <= 0:
             revert(f"given `initialSupply` invalid: {initialSupply} <= 0")
 
-        if decimals <= 0:
-            revert(f"given `decimals` invalid: {decimals} <= 0")
+        if _decimals <= 0:
+            revert(f"given `decimals` invalid: {_decimals} <= 0")
 
-        total_supply = initialSupply * 10 ** decimals
+        total_supply = initialSupply * 10 ** _decimals
         self._total_supply.set(initialSupply)
-        self._decimals.set(decimals)
+        self._decimals.set(_decimals)
         self._balances[self.msg.sender] = total_supply
 
     def on_update(self) -> None:

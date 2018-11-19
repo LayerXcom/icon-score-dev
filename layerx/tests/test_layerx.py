@@ -1,13 +1,9 @@
 import os
-from time import sleep
 
-from iconsdk.builder.transaction_builder import DeployTransactionBuilder, CallTransactionBuilder
 from iconsdk.builder.call_builder import CallBuilder
-from iconsdk.icon_service import IconService
+from iconsdk.builder.transaction_builder import DeployTransactionBuilder, CallTransactionBuilder
 from iconsdk.libs.in_memory_zip import gen_deploy_data_content
-from iconsdk.providers.http_provider import HTTPProvider
 from iconsdk.signed_transaction import SignedTransaction
-
 from tbears.libs.icon_integrate_test import IconIntegrateTestBase, SCORE_INSTALL_ADDRESS
 
 DIR_PATH = os.path.abspath(os.path.dirname(__file__))
@@ -19,17 +15,13 @@ class TestLayerXToken(IconIntegrateTestBase):
 
     def setUp(self):
         super().setUp()
-
         self.icon_service = None
-        # if you want to send request to network, uncomment next line and set self.TEST_HTTP_ENDPOINT_URI_V3
-        # self.icon_service = IconService(HTTPProvider(self.TEST_HTTP_ENDPOINT_URI_V3))
 
-        # install SCORE
-        params = {'initialSupply': 1000, 'decimals': 10}
+        # deploy
+        params = {'initialSupply': 1000, '_decimals': 10}
         self._score_address = self._deploy_score(params=params)['scoreAddress']
 
     def _deploy_score(self, to: str = SCORE_INSTALL_ADDRESS, params: dict = None) -> dict:
-        # Generates an instance of transaction for deploying SCORE.
         transaction = DeployTransactionBuilder() \
             .from_(self._test1.get_address()) \
             .to(to) \
@@ -40,10 +32,7 @@ class TestLayerXToken(IconIntegrateTestBase):
             .content(gen_deploy_data_content(self.SCORE_PROJECT)) \
             .build()
 
-        # Returns the signed transaction object having a signature
         signed_transaction = SignedTransaction(transaction, self._test1)
-
-        # process the transaction in local
         tx_result = self.process_transaction(signed_transaction, self.icon_service)
 
         self.assertTrue('status' in tx_result)
@@ -89,18 +78,18 @@ class TestLayerXToken(IconIntegrateTestBase):
         # Sends the call request
         response = self.process_call(call, self.icon_service)
 
-        self.assertEqual(hex(1000*10**10), response)
+        self.assertEqual(hex(1000 * 10 ** 10), response)
 
     def test_call_transfer_success(self):
         value = 100
         recipient = f"hx{'0'*40}"
 
         # publish transfer calling transactions
-        transaction = CallTransactionBuilder()\
-            .from_(self._test1.get_address())\
+        transaction = CallTransactionBuilder() \
+            .from_(self._test1.get_address()) \
             .to(self._score_address).method({}) \
-            .step_limit(2000000)\
-            .method("transfer")\
+            .step_limit(2000000) \
+            .method("transfer") \
             .params({"_to": recipient, "_value": value}) \
             .build()
 
@@ -108,7 +97,7 @@ class TestLayerXToken(IconIntegrateTestBase):
         tx_result = self.process_transaction(signed_transaction)
 
         self.assertEqual(tx_result['status'], 1)
-        self.assertFalse(tx_result['eventLogs'] is None)
+        self.assertNotEqual(len(tx_result['eventLogs']), 0)
         print(f"eventLogs: {tx_result['eventLogs']}")
 
         # check the balances of recipient
@@ -129,18 +118,18 @@ class TestLayerXToken(IconIntegrateTestBase):
             .build()
 
         response = self.process_call(call, self.icon_service)
-        self.assertEqual(hex(1000*10**10 - value), response)
+        self.assertEqual(hex(1000 * 10 ** 10 - value), response)
 
     def test_call_transfer_fail(self):
-        value = 1000*10**10 + 1
+        value = 1000 * 10 ** 10 + 1
         recipient = f"hx{'0'*40}"
 
         # publish transfer calling transactions
-        transaction = CallTransactionBuilder()\
-            .from_(self._test1.get_address())\
+        transaction = CallTransactionBuilder() \
+            .from_(self._test1.get_address()) \
             .to(self._score_address).method({}) \
-            .step_limit(2000000)\
-            .method("transfer")\
+            .step_limit(2000000) \
+            .method("transfer") \
             .params({"_to": recipient, "_value": value}) \
             .build()
 
@@ -168,4 +157,4 @@ class TestLayerXToken(IconIntegrateTestBase):
             .build()
 
         response = self.process_call(call, self.icon_service)
-        self.assertEqual(hex(1000*10**10), response)
+        self.assertEqual(hex(1000 * 10 ** 10), response)
