@@ -2,6 +2,7 @@ from iconservice import *
 
 TAG = 'LXTCrowdSale'
 
+
 class LXTCrowdSale(IconScoreBase):
 
     def __init__(self, db: IconScoreDatabase) -> None:

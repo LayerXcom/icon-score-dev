@@ -24,7 +24,7 @@ class TestLayerXToken(IconIntegrateTestBase):
         # self.icon_service = IconService(HTTPProvider(self.TEST_HTTP_ENDPOINT_URI_V3))
 
         # install SCORE
-        params = {'totalSupply': 1000}
+        params = {'initialSupply': 1000, 'decimals': 10}
         self._score_address = self._deploy_score(params=params)['scoreAddress']
 
     def _deploy_score(self, to: str = SCORE_INSTALL_ADDRESS, params: dict = None) -> dict:
@@ -59,23 +59,10 @@ class TestLayerXToken(IconIntegrateTestBase):
     def test_call_hello(self):
         call = CallBuilder().from_(self._test1.get_address()) \
             .to(self._score_address) \
-            .method("hello") \
+            .method("name") \
             .build()
-
-        transaction = CallTransactionBuilder() \
-            .from_(self._test1.get_address()) \
-            .to(self._score_address) \
-            .step_limit(100000000000) \
-            .nid(3) \
-            .nonce(100) \
-            .method("balanceOf") \
-            .build()
-
-        signed_transaction = SignedTransaction(transaction, self._test1)
-        tx_result = self.process_transaction(signed_transaction, self.icon_service)
-        print(tx_result)
 
         # Sends the call request
         response = self.process_call(call, self.icon_service)
 
-        self.assertEqual("Hello", response)
+        self.assertEqual("LayerXToken", response)
